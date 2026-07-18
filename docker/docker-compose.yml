@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # -------------------------------------
+  # 1. Database (Postgres for MLflow & Feast)
+  # -------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: startup_intelligence
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # -------------------------------------
+  # 2. Object Storage (MinIO for MLflow artifacts & Feast offline store if needed)
+  # -------------------------------------
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  # -------------------------------------
+  # 3. MLflow Tracking Server
+  # -------------------------------------
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.7.0
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://user:password@postgres:5432/startup_intelligence
+      --default-artifact-root s3://mlflow/
+      --host 0.0.0.0
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - minio
+
+  # -------------------------------------
+  # 4. Redis (Cache for FAISS recommendations & Feast online store)
+  # -------------------------------------
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # -------------------------------------
+  # 5. Feature Store (Feast) - Mocked/Optional container if using Feast server
+  # -------------------------------------
+  feast:
+    image: python:3.10-slim
+    command: bash -c "pip install feast[redis,postgres] && feast serve -h 0.0.0.0"
+    working_dir: /feature_store
+    volumes:
+      - ./feature_store:/feature_store
+    ports:
+      - "6566:6566"
+    depends_on:
+      - postgres
+      - redis
+
+  # -------------------------------------
+  # 6. Prometheus (Metrics)
+  # -------------------------------------
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # -------------------------------------
+  # 7. Grafana (Dashboards)
+  # -------------------------------------
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # -------------------------------------
+  # 8. FastAPI Backend
+  # -------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app/backend:/app
+      - ./src:/src
+    depends_on:
+      - redis
+      - feast
+
+volumes:
+  postgres_data:
+  minio_data:
