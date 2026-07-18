@@ -2,13 +2,20 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
+from inference import InferenceEngine
+
 app = FastAPI(title="Startup-Intelligence API")
 
+# Initialize the Inference Engine at startup
+inference_engine = InferenceEngine()
+
 class StartupFeatures(BaseModel):
-    funding_velocity: float
+    industry: str
+    country: str
+    months_active: int
+    total_funding_usd: float
     burn_rate_proxy: float
-    network_centrality: float
-    # Other categorical fields like industry, country, etc.
+    co_investor_count: int
 
 class PredictionResponse(BaseModel):
     success_probability: float
@@ -24,8 +31,8 @@ def predict(features: StartupFeatures):
     """
     Predict success probability for a startup based on its features.
     """
-    # TODO: Fetch from Feast if needed, run CatBoost inference
-    return {"success_probability": 0.85}
+    prob = inference_engine.predict(features.dict())
+    return {"success_probability": prob}
 
 @app.post("/api/v1/explain", response_model=ExplanationResponse)
 def explain(features: StartupFeatures):

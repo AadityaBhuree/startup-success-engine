@@ -98,6 +98,11 @@ services:
     build:
       context: ..
       dockerfile: docker/backend.Dockerfile
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
     ports:
       - "8000:8000"
     volumes:

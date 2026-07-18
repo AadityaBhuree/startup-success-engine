@@ -3,8 +3,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 COPY pyproject.toml .
-# In a real setup we might copy poetry.lock or requirements.txt and install
-# RUN pip install .
+RUN pip install fastapi uvicorn pydantic mlflow boto3 catboost pandas scikit-learn
 
 COPY app/backend /app
 COPY src /src
