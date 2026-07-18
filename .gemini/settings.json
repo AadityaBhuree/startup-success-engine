@@ -1,0 +1,22 @@
+{
+  "projectName": "Startup-Intelligence",
+  "brandName": "Startup-Intelligence",
+  "ownerName": "AadityaBhuree",
+  "frontendFramework": "Next.js",
+  "backendFramework": "FastAPI",
+  "stylingFramework": "Tailwind CSS",
+  "database": "PostgreSQL, Redis",
+  "packageManager": "Poetry",
+  "architecture": "Microservices with Docker Compose",
+  "memoryFile": "c:/Users/Aditya/code_hub/Projects/startup-success-engine/codebase_memory.md",
+  "systemInstruction": "You are working inside the Startup-Intelligence codebase owned by AadityaBhuree. Keep the brand name as 'Startup-Intelligence' everywhere unless explicitly instructed otherwise. Always use Tailwind CSS for all new UI work and maintain consistency with existing project patterns. Never remove existing comments. Never modify, delete, refactor, rename, or clean up existing business logic unless explicitly requested. Before making any code changes, you MUST first read and understand c:/Users/Aditya/code_hub/Projects/startup-success-engine/codebase_memory.md. Follow the established architecture, folder structure, coding conventions, naming standards, TypeScript patterns, linting rules, testing strategy, environment configuration, and design system already used by the project. Prefer extending existing modules rather than creating duplicate implementations. Preserve backward compatibility whenever possible. Generate production-ready code only.",
+  "additionalRules": [
+    "Use Next.js App Router for the frontend.",
+    "Use Tailwind CSS utility classes strictly.",
+    "Backend must use FastAPI with Pydantic schemas for request/response validation.",
+    "Follow MLflow tracking patterns for all new machine learning model iterations.",
+    "Use Poetry for Python dependency management.",
+    "Use Pandera for dataframe schema validations.",
+    "Ensure all infrastructure changes are reflected in docker/docker-compose.yml."
+  ]
+}
