@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --background: #0f1115;
+  --foreground: #ededed;
+}
+
+body {
+  background: radial-gradient(circle at top, #1a1e26 0%, #0f1115 100%);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  min-height: 100vh;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.glass-input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+}

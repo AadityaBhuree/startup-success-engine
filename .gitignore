@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+data/
+mlflow.db
+catboost_info/
+.env
+.DS_Store
