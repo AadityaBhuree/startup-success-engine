@@ -1,164 +1,172 @@
 "use client";
 
 import { useState } from "react";
+import PredictionForm, { StartupFeatures } from "@/components/PredictionForm";
+import FeatureExplanation from "@/components/FeatureExplanation";
+import SimilarStartups, { StartupRecommendation } from "@/components/SimilarStartups";
 
-export default function Home() {
-  const [industry, setIndustry] = useState("SaaS");
-  const [country, setCountry] = useState("USA");
-  const [monthsActive, setMonthsActive] = useState(24);
-  const [totalFunding, setTotalFunding] = useState(5000000);
-  const [burnRate, setBurnRate] = useState(100000);
-  const [coInvestors, setCoInvestors] = useState(3);
+export default function Dashboard() {
+  const [loadingPredict, setLoadingPredict] = useState(false);
+  const [loadingExplain, setLoadingExplain] = useState(false);
+  const [loadingRecommend, setLoadingRecommend] = useState(false);
   
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<number | null>(null);
-  
-  const handlePredict = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const [prediction, setPrediction] = useState<number | null>(null);
+  const [shapValues, setShapValues] = useState<Record<string, number> | null>(null);
+  const [similarStartups, setSimilarStartups] = useState<StartupRecommendation[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePredict = async (features: StartupFeatures) => {
+    setError(null);
+    setLoadingPredict(true);
+    setLoadingExplain(true);
+    setLoadingRecommend(true);
+    
+    // Clear previous results visually before fetching new ones
+    setPrediction(null);
+    setShapValues(null);
+    setSimilarStartups(null);
+    
     try {
-      const response = await fetch("/api/v1/predict", {
+      // 1. Predict
+      const predRes = await fetch("/api/v1/predict", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          industry,
-          country,
-          months_active: monthsActive,
-          total_funding_usd: totalFunding,
-          burn_rate_proxy: burnRate,
-          co_investor_count: coInvestors,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(features),
       });
-      const data = await response.json();
-      setResult(data.success_probability);
-    } catch (error) {
-      console.error("Prediction failed:", error);
+      if (!predRes.ok) throw new Error("Prediction failed");
+      const predData = await predRes.json();
+      setPrediction(predData.success_probability);
+      setLoadingPredict(false);
+
+      // 2. Explain (Run concurrently with recommend)
+      const fetchExplain = async () => {
+        try {
+          const expRes = await fetch("/api/v1/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(features),
+          });
+          if (expRes.ok) {
+            const expData = await expRes.json();
+            setShapValues(expData.shap_values);
+          }
+        } catch (e) {
+          console.error("Explanation failed", e);
+        } finally {
+          setLoadingExplain(false);
+        }
+      };
+
+      // 3. Recommend (Run concurrently with explain)
+      const fetchRecommend = async () => {
+        try {
+          const recRes = await fetch("/api/v1/recommend", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(features),
+          });
+          if (recRes.ok) {
+            const recData = await recRes.json();
+            setSimilarStartups(recData.similar_startups);
+          }
+        } catch (e) {
+          console.error("Recommendation failed", e);
+        } finally {
+          setLoadingRecommend(false);
+        }
+      };
+
+      await Promise.all([fetchExplain(), fetchRecommend()]);
+      
+    } catch (err: any) {
+      console.error(err);
+      setError("An error occurred while communicating with the AI Engine.");
+      setLoadingPredict(false);
+      setLoadingExplain(false);
+      setLoadingRecommend(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-16 px-4">
-      <header className="mb-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-4">
-          Startup Intelligence
-        </h1>
-        <p className="text-gray-400 max-w-xl mx-auto">
-          AI-powered predictive engine for startup success probability and recommendations.
-        </p>
+    <div className="p-8 max-w-7xl mx-auto flex flex-col gap-8">
+      <header className="mb-4">
+        <h1 className="text-3xl font-bold text-white mb-2">Workspace Overview</h1>
+        <p className="text-gray-400">Analyze startup metrics and predict success probabilities in real-time.</p>
       </header>
 
-      <main className="w-full max-w-4xl grid md:grid-cols-2 gap-8">
-        <form onSubmit={handlePredict} className="glass-panel rounded-2xl p-8 flex flex-col gap-6 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-500"></div>
-          <h2 className="text-xl font-semibold mb-2">Startup Profile</h2>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-gray-400 uppercase tracking-wider">Industry</label>
-              <input 
-                type="text" 
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                className="glass-input rounded-lg px-4 py-2 text-sm" 
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-gray-400 uppercase tracking-wider">Country</label>
-              <input 
-                type="text" 
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="glass-input rounded-lg px-4 py-2 text-sm" 
-              />
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-gray-400 uppercase tracking-wider">Months Active</label>
-            <input 
-              type="number" 
-              value={monthsActive}
-              onChange={(e) => setMonthsActive(parseInt(e.target.value))}
-              className="glass-input rounded-lg px-4 py-2 text-sm" 
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-gray-400 uppercase tracking-wider">Total Funding (USD)</label>
-              <input 
-                type="number" 
-                value={totalFunding}
-                onChange={(e) => setTotalFunding(parseInt(e.target.value))}
-                className="glass-input rounded-lg px-4 py-2 text-sm" 
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-gray-400 uppercase tracking-wider">Burn Rate</label>
-              <input 
-                type="number" 
-                value={burnRate}
-                onChange={(e) => setBurnRate(parseInt(e.target.value))}
-                className="glass-input rounded-lg px-4 py-2 text-sm" 
-              />
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-gray-400 uppercase tracking-wider">Co-investors</label>
-            <input 
-              type="number" 
-              value={coInvestors}
-              onChange={(e) => setCoInvestors(parseInt(e.target.value))}
-              className="glass-input rounded-lg px-4 py-2 text-sm" 
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="mt-4 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 flex justify-center items-center"
-          >
-            {loading ? (
-              <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            ) : (
-              "Predict Success"
-            )}
-          </button>
-        </form>
-
-        <div className="flex flex-col gap-8">
-          <div className="glass-panel rounded-2xl p-8 flex flex-col justify-center items-center text-center relative overflow-hidden min-h-[240px]">
-            <h2 className="text-lg font-medium text-gray-300 mb-6 w-full text-left">Prediction Result</h2>
-            
-            {result !== null ? (
-              <div className="animate-in fade-in zoom-in duration-500">
-                <div className="text-6xl font-black bg-clip-text text-transparent bg-gradient-to-br from-emerald-300 to-blue-500 mb-2">
-                  {(result * 100).toFixed(1)}%
-                </div>
-                <p className="text-sm text-gray-400">Success Probability</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-gray-500 h-full">
-                <svg className="w-12 h-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <p>Run prediction to see results</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="glass-panel rounded-2xl p-8">
-             <h2 className="text-lg font-medium text-gray-300 mb-4">Insights</h2>
-             <p className="text-sm text-gray-400 leading-relaxed">
-               The model uses CatBoost and FAISS to predict the likelihood of this startup reaching a successful exit or next funding round, comparing its metrics against historical data.
-             </p>
-          </div>
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg flex items-center gap-3">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {error}
         </div>
-      </main>
+      )}
+
+      <div className="grid lg:grid-cols-12 gap-8">
+        {/* Left Column - Input Form */}
+        <div className="lg:col-span-5 flex flex-col h-[600px]">
+          <PredictionForm onSubmit={handlePredict} loading={loadingPredict} />
+        </div>
+
+        {/* Right Column - Results Dashboard */}
+        <div className="lg:col-span-7 flex flex-col gap-8">
+          
+          {/* Top Row - Score & Similar Startups */}
+          <div className="grid sm:grid-cols-2 gap-8 h-full">
+            <div className="glass-panel rounded-2xl p-6 flex flex-col justify-center items-center text-center relative overflow-hidden min-h-[250px]">
+              <h2 className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-6 w-full text-left">
+                Success Probability
+              </h2>
+              
+              {loadingPredict ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mb-4" />
+                </div>
+              ) : prediction !== null ? (
+                <div className="animate-in zoom-in duration-500 flex flex-col items-center">
+                  <div className="relative">
+                    <svg className="w-32 h-32 transform -rotate-90">
+                      <circle cx="64" cy="64" r="60" className="stroke-white/10" strokeWidth="8" fill="none" />
+                      <circle 
+                        cx="64" cy="64" r="60" 
+                        className="stroke-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" 
+                        strokeWidth="8" fill="none" 
+                        strokeDasharray="377" 
+                        strokeDashoffset={377 - (377 * prediction)} 
+                        style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-3xl font-black text-white">{(prediction * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-emerald-400 font-medium bg-emerald-400/10 px-3 py-1 rounded-full text-sm">
+                    {prediction > 0.7 ? 'High Potential' : prediction > 0.4 ? 'Moderate Risk' : 'High Risk'}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-500 opacity-50">
+                  <svg className="w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <p className="text-sm">Awaiting inputs...</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="h-[250px]">
+              <SimilarStartups startups={similarStartups} loading={loadingRecommend} />
+            </div>
+          </div>
+
+          {/* Bottom Row - Explanations */}
+          <div className="h-[318px]">
+            <FeatureExplanation shapValues={shapValues} loading={loadingExplain} />
+          </div>
+          
+        </div>
+      </div>
     </div>
   );
 }
