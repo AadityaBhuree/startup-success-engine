@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
-from inference import InferenceEngine
+from app.backend.inference import InferenceEngine
 
 app = FastAPI(title="Startup-Intelligence API")
 
