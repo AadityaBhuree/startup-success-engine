@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { Rocket, Factory, Globe, Calendar, DollarSign, Flame, Users } from "lucide-react";
 
 export interface StartupFeatures {
   industry: string;
@@ -38,115 +40,154 @@ export default function PredictionForm({ onSubmit, loading }: PredictionFormProp
     });
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -10 },
+    visible: { opacity: 1, x: 0 }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="glass-panel rounded-2xl p-8 flex flex-col gap-6 relative overflow-hidden h-full">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-500"></div>
+    <motion.form 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      onSubmit={handleSubmit} 
+      className="glass-panel p-8 flex flex-col gap-6 relative h-full group"
+    >
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 opacity-70 group-hover:opacity-100 transition-opacity duration-500"></div>
       
-      <div>
-        <h2 className="text-xl font-semibold mb-1">Startup Profile</h2>
-        <p className="text-xs text-gray-400">Enter the startup's current metrics to predict exit probability.</p>
-      </div>
+      <motion.div variants={itemVariants}>
+        <h2 className="text-2xl font-bold mb-1 flex items-center gap-2">
+          <Rocket className="w-6 h-6 text-cyan-400" />
+          Target Startup
+        </h2>
+        <p className="text-sm text-gray-400">Configure parameters to run predictive models.</p>
+      </motion.div>
       
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2 relative group">
-          <label className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
+      <div className="grid grid-cols-2 gap-5 mt-2">
+        <motion.div variants={itemVariants} className="flex flex-col gap-2">
+          <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+            <Factory className="w-3.5 h-3.5 text-gray-500" />
             Industry
           </label>
           <input 
             type="text" 
             value={industry}
             onChange={(e) => setIndustry(e.target.value)}
-            className="glass-input rounded-lg px-4 py-2 text-sm w-full"
+            className="glass-input rounded-xl px-4 py-3 text-sm w-full font-medium"
             required 
           />
-        </div>
-        <div className="flex flex-col gap-2">
-          <label className="text-xs text-gray-400 uppercase tracking-wider">Country</label>
+        </motion.div>
+        
+        <motion.div variants={itemVariants} className="flex flex-col gap-2">
+          <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+            <Globe className="w-3.5 h-3.5 text-gray-500" />
+            Country
+          </label>
           <input 
             type="text" 
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            className="glass-input rounded-lg px-4 py-2 text-sm w-full" 
+            className="glass-input rounded-xl px-4 py-3 text-sm w-full font-medium" 
             required
           />
-        </div>
+        </motion.div>
       </div>
       
-      <div className="flex flex-col gap-2 group">
-        <label className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
+      <motion.div variants={itemVariants} className="flex flex-col gap-2">
+        <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+          <Calendar className="w-3.5 h-3.5 text-gray-500" />
           Months Active
-          <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full lowercase ml-2">from founding</span>
         </label>
         <input 
           type="number" 
           min="0"
           value={monthsActive}
           onChange={(e) => setMonthsActive(parseInt(e.target.value) || 0)}
-          className="glass-input rounded-lg px-4 py-2 text-sm w-full" 
+          className="glass-input rounded-xl px-4 py-3 text-sm w-full font-medium" 
           required
         />
-      </div>
+      </motion.div>
       
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2 group">
-          <label className="text-xs text-gray-400 uppercase tracking-wider flex justify-between">
-            <span>Total Funding</span>
-            <span className="text-emerald-400 text-[10px] bg-emerald-400/10 px-1 rounded">USD</span>
+      <div className="grid grid-cols-2 gap-5">
+        <motion.div variants={itemVariants} className="flex flex-col gap-2">
+          <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+              Funding
+            </div>
           </label>
           <input 
             type="number" 
             min="0"
+            step="100000"
             value={totalFunding}
             onChange={(e) => setTotalFunding(parseInt(e.target.value) || 0)}
-            className="glass-input rounded-lg px-4 py-2 text-sm w-full" 
+            className="glass-input rounded-xl px-4 py-3 text-sm w-full font-medium" 
             required
           />
-        </div>
-        <div className="flex flex-col gap-2 group">
-          <label className="text-xs text-gray-400 uppercase tracking-wider flex justify-between">
-            <span>Burn Rate</span>
-            <span className="text-red-400 text-[10px] bg-red-400/10 px-1 rounded">Monthly</span>
+        </motion.div>
+        
+        <motion.div variants={itemVariants} className="flex flex-col gap-2">
+          <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+            <Flame className="w-3.5 h-3.5 text-orange-500" />
+            Burn Rate
           </label>
           <input 
             type="number"
+            step="10000"
             value={burnRate}
             onChange={(e) => setBurnRate(parseInt(e.target.value) || 0)}
-            className="glass-input rounded-lg px-4 py-2 text-sm w-full" 
+            className="glass-input rounded-xl px-4 py-3 text-sm w-full font-medium" 
             required
           />
-        </div>
+        </motion.div>
       </div>
       
-      <div className="flex flex-col gap-2">
-        <label className="text-xs text-gray-400 uppercase tracking-wider">Co-investors</label>
+      <motion.div variants={itemVariants} className="flex flex-col gap-2">
+        <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+          <Users className="w-3.5 h-3.5 text-indigo-400" />
+          Co-investors
+        </label>
         <input 
           type="number"
           min="0"
           value={coInvestors}
           onChange={(e) => setCoInvestors(parseInt(e.target.value) || 0)}
-          className="glass-input rounded-lg px-4 py-2 text-sm w-full" 
+          className="glass-input rounded-xl px-4 py-3 text-sm w-full font-medium" 
           required
         />
-      </div>
+      </motion.div>
       
-      <div className="mt-auto pt-4">
-        <button 
+      <motion.div variants={itemVariants} className="mt-auto pt-6">
+        <motion.button 
           type="submit" 
           disabled={loading}
-          className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:transform-none flex justify-center items-center shadow-lg shadow-emerald-500/20"
+          whileHover={!loading ? { scale: 1.02 } : {}}
+          whileTap={!loading ? { scale: 0.98 } : {}}
+          className="w-full relative overflow-hidden group/btn bg-white/5 border border-white/10 hover:border-cyan-500/50 hover:bg-white/10 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 disabled:opacity-50"
         >
           {loading ? (
-            <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+            <span className="flex justify-center items-center gap-3">
+              <span className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></span>
+              Processing...
+            </span>
           ) : (
-            <span className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Run AI Engine
+            <span className="flex items-center justify-center gap-2">
+              <Rocket className="w-4 h-4 text-cyan-400 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+              Engage Neural Network
             </span>
           )}
-        </button>
-      </div>
-    </form>
+        </motion.button>
+      </motion.div>
+    </motion.form>
   );
 }
