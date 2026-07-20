@@ -1,5 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { GitMerge } from "lucide-react";
+
 interface FeatureExplanationProps {
   shapValues: Record<string, number> | null;
   loading: boolean;
@@ -8,77 +11,115 @@ interface FeatureExplanationProps {
 export default function FeatureExplanation({ shapValues, loading }: FeatureExplanationProps) {
   if (loading) {
     return (
-      <div className="glass-panel rounded-2xl p-6 h-full flex flex-col items-center justify-center min-h-[250px]">
-        <span className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mb-4"></span>
-        <p className="text-gray-400 text-sm">Analyzing feature impact...</p>
+      <div className="glass-panel p-6 h-full flex flex-col items-center justify-center min-h-[300px]">
+        <div className="flex gap-1 items-end h-12">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <motion.div
+              key={i}
+              className="w-2 bg-indigo-500 rounded-t-sm"
+              animate={{ height: ["20%", "100%", "20%"] }}
+              transition={{
+                duration: 0.8,
+                repeat: Infinity,
+                delay: i * 0.1,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </div>
+        <p className="text-gray-400 text-sm mt-4 tracking-widest uppercase">Calculating SHAP Matrix...</p>
       </div>
     );
   }
 
   if (!shapValues) {
     return (
-      <div className="glass-panel rounded-2xl p-6 h-full flex flex-col items-center justify-center text-center text-gray-500 min-h-[250px]">
-        <svg className="w-10 h-10 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        <p className="text-sm">Run prediction to see feature impact</p>
+      <div className="glass-panel p-6 h-full flex flex-col items-center justify-center text-center text-gray-500 min-h-[300px]">
+        <GitMerge className="w-12 h-12 mb-4 opacity-20" />
+        <p className="text-sm tracking-widest uppercase">Awaiting Neural Input</p>
       </div>
     );
   }
 
-  // Format feature names
   const formatName = (key: string) => {
     return key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  // Find max absolute value to scale the bars
   const maxAbsValue = Math.max(...Object.values(shapValues).map(v => Math.abs(v)), 0.1);
-
   const entries = Object.entries(shapValues).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 },
+  };
+
   return (
-    <div className="glass-panel rounded-2xl p-6 flex flex-col h-full relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+    <div className="glass-panel p-6 flex flex-col h-full relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -mt-10"></div>
       
-      <h2 className="text-lg font-medium text-white mb-6">Key Drivers</h2>
+      <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+        <GitMerge className="w-5 h-5 text-indigo-400" />
+        Feature Attributions
+      </h2>
       
-      <div className="flex flex-col gap-4 flex-1 justify-center">
+      <motion.div 
+        className="flex flex-col gap-5 flex-1 justify-center"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {entries.map(([key, value]) => {
           const isPositive = value > 0;
           const percentage = (Math.abs(value) / maxAbsValue) * 100;
           
           return (
-            <div key={key} className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-300 font-medium">{formatName(key)}</span>
-                <span className={isPositive ? "text-emerald-400" : "text-red-400"}>
+            <motion.div key={key} variants={itemVariants} className="flex flex-col gap-2 group cursor-default">
+              <div className="flex justify-between items-end text-xs">
+                <span className="text-gray-300 font-semibold tracking-wider group-hover:text-white transition-colors">
+                  {formatName(key)}
+                </span>
+                <span className={`font-mono font-bold ${isPositive ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.5)]"}`}>
                   {isPositive ? "+" : ""}{value.toFixed(3)}
                 </span>
               </div>
               
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden flex">
-                <div className="w-1/2 flex justify-end">
+              <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden flex relative shadow-inner">
+                {/* Center zero line */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-white/30 z-10" />
+                
+                <div className="w-1/2 flex justify-end pr-1">
                   {!isPositive && (
-                    <div 
-                      className="h-full bg-gradient-to-l from-red-500 to-orange-500 rounded-l-full transition-all duration-1000 ease-out"
-                      style={{ width: `${percentage}%` }}
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      transition={{ type: "spring", stiffness: 50, damping: 15 }}
+                      className="h-full bg-gradient-to-l from-rose-500 to-rose-400 rounded-l-full shadow-[0_0_10px_rgba(251,113,133,0.5)]"
                     />
                   )}
                 </div>
-                <div className="w-[1px] bg-white/20 z-10" />
-                <div className="w-1/2">
+                <div className="w-1/2 pl-1">
                   {isPositive && (
-                    <div 
-                      className="h-full bg-gradient-to-r from-emerald-400 to-blue-500 rounded-r-full transition-all duration-1000 ease-out"
-                      style={{ width: `${percentage}%` }}
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      transition={{ type: "spring", stiffness: 50, damping: 15 }}
+                      className="h-full bg-gradient-to-r from-emerald-400 to-emerald-300 rounded-r-full shadow-[0_0_10px_rgba(52,211,153,0.5)]"
                     />
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }
