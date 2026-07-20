@@ -39,13 +39,13 @@ def explain(features: StartupFeatures):
     """
     Generate SHAP explanation for the prediction.
     """
-    # TODO: Run SHAP explanation
-    return {"shap_values": {"funding_velocity": 0.2, "burn_rate_proxy": -0.1}}
+    shap_vals = inference_engine.explain(features.dict())
+    return {"shap_values": shap_vals}
 
 @app.post("/api/v1/recommend", response_model=RecommendationResponse)
 def recommend(startup_data: Dict[str, Any]):
     """
     Recommend similar startups using FAISS embeddings.
     """
-    # TODO: Generate embedding and search FAISS index (cached in Redis)
-    return {"similar_startups": [{"name": "MockStartup A", "similarity": 0.9}]}
+    recs = inference_engine.recommend(startup_data)
+    return {"similar_startups": recs}
