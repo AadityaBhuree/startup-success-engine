@@ -1,14 +1,36 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from typing import List, Dict, Any
+import time
+import logging
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.backend.inference import InferenceEngine
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Startup-Intelligence API")
 
 # Expose /metrics endpoint for Prometheus scraping
 Instrumentator().instrument(app).expose(app)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log each request with method, path, and response time."""
+    start = time.time()
+    response = await call_next(request)
+    duration_ms = (time.time() - start) * 1000
+    logger.info(
+        "%s %s -> %s (%.1fms)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+    return response
+
 
 # Initialize the Inference Engine at startup
 inference_engine = InferenceEngine()
