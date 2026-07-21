@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict, Any
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.backend.inference import InferenceEngine
 
 app = FastAPI(title="Startup-Intelligence API")
+
+# Expose /metrics endpoint for Prometheus scraping
+Instrumentator().instrument(app).expose(app)
 
 # Initialize the Inference Engine at startup
 inference_engine = InferenceEngine()
