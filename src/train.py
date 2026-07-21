@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import faiss
 import pickle
-from sentence_transformers import SentenceTransformer
+import pickle
 
 from src.config import settings
 from src.data_pipeline import load_data, validate_raw_data, clean_data
@@ -16,7 +16,12 @@ def build_faiss_index(df: pd.DataFrame):
     
     # Load model and encode
     print("Loading SentenceTransformer model...")
-    model = SentenceTransformer("all-MiniLM-L6-v2")
+    try:
+        from sentence_transformers import SentenceTransformer
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+    except OSError as e:
+        print(f"Skipping FAISS indexing due to SentenceTransformer/PyTorch OS Error: {e}")
+        return
     print("Encoding texts to embeddings...")
     embeddings = model.encode(texts, show_progress_bar=False)
     
