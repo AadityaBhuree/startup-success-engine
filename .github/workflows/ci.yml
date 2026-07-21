@@ -27,3 +27,7 @@ jobs:
     - name: Run Pytest
       run: |
         pytest tests/
+
+    - name: Check Formatting (Black)
+      run: |
+        poetry run black --check src/ app/ tests/
