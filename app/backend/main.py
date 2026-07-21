@@ -31,6 +31,17 @@ class RecommendationResponse(BaseModel):
     similar_startups: List[Dict[str, Any]]
 
 
+@app.get("/health")
+def health():
+    """Health check endpoint for uptime monitoring and Docker health checks."""
+    return {
+        "status": "ok",
+        "model_loaded": inference_engine.model is not None,
+        "faiss_loaded": inference_engine.faiss_index is not None,
+        "shap_loaded": inference_engine.explainer is not None,
+    }
+
+
 @app.post("/api/v1/predict", response_model=PredictionResponse)
 def predict(features: StartupFeatures):
     """
