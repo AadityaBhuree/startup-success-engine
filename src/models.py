@@ -89,9 +89,31 @@ def train_production_model(df: pd.DataFrame) -> CatBoostClassifier:
         from mlflow.models.signature import infer_signature
 
         signature = infer_signature(X_train, preds)
-        mlflow.catboost.log_model(
-            final_model, artifact_path="model", signature=signature
+        model_info = mlflow.catboost.log_model(
+            final_model,
+            artifact_path="model",
+            signature=signature,
+            registered_model_name="Startup-Success-Predictor",
         )
+
+        # Promote the newly registered version to Production stage
+        try:
+            client = mlflow.tracking.MlflowClient()
+            latest = client.get_latest_versions(
+                "Startup-Success-Predictor", stages=["None"]
+            )
+            if latest:
+                client.transition_model_version_stage(
+                    name="Startup-Success-Predictor",
+                    version=latest[0].version,
+                    stage="Production",
+                    archive_existing_versions=True,
+                )
+                print(
+                    f"Model version {latest[0].version} promoted to Production."
+                )
+        except Exception as e:
+            print(f"Model Registry promotion skipped (non-critical): {e}")
 
         print("Model successfully logged to MLflow.")
         return final_model
