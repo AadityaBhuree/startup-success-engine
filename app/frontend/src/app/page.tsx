@@ -35,6 +35,7 @@ export default function Dashboard() {
         body: JSON.stringify(features),
       });
       if (!predRes.ok) throw new Error("Prediction failed");
+      const predData = await predRes.json();
       const prob = predData.success_probability;
       setPrediction(prob);
       setLoadingPredict(false);
