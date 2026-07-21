@@ -35,9 +35,33 @@ export default function Dashboard() {
         body: JSON.stringify(features),
       });
       if (!predRes.ok) throw new Error("Prediction failed");
-      const predData = await predRes.json();
-      setPrediction(predData.success_probability);
+      const prob = predData.success_probability;
+      setPrediction(prob);
       setLoadingPredict(false);
+
+      // Persist to sessionStorage for Analytics page
+      try {
+        const label =
+          prob > 0.6
+            ? "High Viability"
+            : prob > 0.4
+            ? "Moderate Risk"
+            : "High Risk";
+        const entry = {
+          industry: features.industry,
+          country: features.country,
+          score: prob,
+          label,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        const prev = JSON.parse(
+          sessionStorage.getItem("prediction_history") || "[]"
+        );
+        sessionStorage.setItem(
+          "prediction_history",
+          JSON.stringify([...prev, entry])
+        );
+      } catch {}
 
       const fetchExplain = async () => {
         try {
