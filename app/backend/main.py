@@ -51,7 +51,7 @@ def predict(features: StartupFeatures):
     """
     Predict success probability for a startup based on its features.
     """
-    prob = inference_engine.predict(features.dict())
+    prob = inference_engine.predict(features.model_dump())
     return {"success_probability": prob}
 
 
@@ -60,7 +60,7 @@ def explain(features: StartupFeatures):
     """
     Generate SHAP explanation for the prediction.
     """
-    shap_vals = inference_engine.explain(features.dict())
+    shap_vals = inference_engine.explain(features.model_dump())
     return {"shap_values": shap_vals}
 
 
