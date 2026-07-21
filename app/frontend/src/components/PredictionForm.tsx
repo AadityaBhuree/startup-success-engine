@@ -120,7 +120,7 @@ export default function PredictionForm({ onSubmit, loading }: PredictionFormProp
       <div className="grid grid-cols-2 gap-5">
         <motion.div variants={itemVariants} className="flex flex-col gap-2">
           <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" title="Total USD capital raised to date">
               <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
               Funding
             </div>
@@ -137,7 +137,7 @@ export default function PredictionForm({ onSubmit, loading }: PredictionFormProp
         </motion.div>
         
         <motion.div variants={itemVariants} className="flex flex-col gap-2">
-          <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+          <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2" title="Monthly net cash burn rate proxy">
             <Flame className="w-3.5 h-3.5 text-orange-500" />
             Burn Rate
           </label>
@@ -151,9 +151,22 @@ export default function PredictionForm({ onSubmit, loading }: PredictionFormProp
           />
         </motion.div>
       </div>
+
+      {/* Runway Calculator Widget */}
+      {burnRate > 0 && (
+        <motion.div variants={itemVariants} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs">
+          <span className="text-gray-400 font-medium">Estimated Runway:</span>
+          <span className={`font-mono font-bold ${
+            (totalFunding / burnRate) >= 18 ? "text-emerald-400" :
+            (totalFunding / burnRate) >= 12 ? "text-yellow-400" : "text-rose-400"
+          }`}>
+            {(totalFunding / burnRate).toFixed(1)} months
+          </span>
+        </motion.div>
+      )}
       
       <motion.div variants={itemVariants} className="flex flex-col gap-2">
-        <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+        <label className="text-xs text-gray-400 uppercase tracking-widest font-semibold flex items-center gap-2" title="Number of participating syndicate VC co-investors">
           <Users className="w-3.5 h-3.5 text-indigo-400" />
           Co-investors
         </label>
