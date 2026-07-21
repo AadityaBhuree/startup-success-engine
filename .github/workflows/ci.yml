@@ -31,3 +31,7 @@ jobs:
     - name: Check Formatting (Black)
       run: |
         poetry run black --check src/ app/ tests/
+
+    - name: Lint (Flake8)
+      run: |
+        poetry run flake8 src/ app/backend/ tests/
