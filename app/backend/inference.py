@@ -33,7 +33,7 @@ class InferenceEngine:
         self.load_faiss()
 
     def load_model(self):
-        mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+        mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
         if "http://mlflow:" in mlflow_uri:
             import socket
 
@@ -41,7 +41,8 @@ class InferenceEngine:
                 mlflow_ip = socket.gethostbyname("mlflow")
                 mlflow_uri = mlflow_uri.replace("mlflow", mlflow_ip)
             except socket.gaierror:
-                pass  # Probably not running in docker context
+                logger.warning("Docker host 'mlflow' not resolved; falling back to local sqlite:///mlflow.db")
+                mlflow_uri = "sqlite:///mlflow.db"
 
         experiment_name = os.getenv(
             "MLFLOW_EXPERIMENT_NAME", "Startup-Success-Predictor"
