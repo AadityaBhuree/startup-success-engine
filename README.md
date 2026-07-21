@@ -1,155 +1,376 @@
 <div align="center">
-  <img src="https://em-content.zobj.net/source/apple/354/rocket_1f680.png" width="100" />
-  <h1>Startup-Intelligence</h1>
-  
-  <p><b>A production-grade Machine Learning system designed to predict startup success and surface recommendations.</b></p>
-  
-  <!-- Badges -->
-  <a href="https://github.com/AadityaBhuree/startup-success-engine"><img src="https://img.shields.io/badge/Python-3.10-blue.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"/></a>
-  <a href="https://github.com/AadityaBhuree/startup-success-engine"><img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" alt="FastAPI"/></a>
-  <a href="https://github.com/AadityaBhuree/startup-success-engine"><img src="https://img.shields.io/badge/Docker-Supported-2496ED.svg?style=for-the-badge&logo=docker" alt="Docker"/></a>
-  <a href="https://github.com/AadityaBhuree/startup-success-engine"><img src="https://img.shields.io/badge/MLflow-Tracking-0194E2.svg?style=for-the-badge&logo=mlflow" alt="MLflow"/></a>
-  <a href="https://github.com/AadityaBhuree/startup-success-engine"><img src="https://img.shields.io/badge/Maintained%3F-yes-brightgreen.svg?style=for-the-badge" alt="Maintained"/></a>
-</div>
 
 <br />
 
-> **Startup-Intelligence** evaluates startup viability by predicting their success probability, explains its predictions via SHAP values, and curates a list of similar startups/investors via a FAISS vector search engine running on local Sentence-Transformer embeddings.
+<img src="https://em-content.zobj.net/source/apple/354/rocket_1f680.png" width="90" />
+
+# Startup Intelligence
+
+**A production-grade Machine Learning system to predict startup success,<br/>explain every decision, and surface similar companies at lightning speed.**
+
+<br/>
+
+[![CI](https://github.com/AadityaBhuree/startup-success-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/AadityaBhuree/startup-success-engine/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.103-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![MLflow](https://img.shields.io/badge/MLflow-Tracking-0194E2?style=flat-square&logo=mlflow&logoColor=white)](https://mlflow.org/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-E6522C?style=flat-square&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+
+<br/>
+
+[🚀 Quick Start](#-quick-start) &nbsp;•&nbsp; [🏗 Architecture](#-system-architecture) &nbsp;•&nbsp; [⚡ API Reference](#-api-reference) &nbsp;•&nbsp; [📁 Project Structure](#-project-structure) &nbsp;•&nbsp; [🧪 Testing](#-testing)
+
+<br/>
+
+</div>
 
 ---
 
-## 📑 Table of Contents
+## ✨ What It Does
 
-- [✨ Features](#-features)
-- [🏗 System Architecture](#-system-architecture)
-- [⚡ Latency Budget](#-latency-budget)
-- [🚀 Getting Started](#-getting-started)
-- [📁 Directory Structure](#-directory-structure)
+> Submit a startup's key metrics and get back — in milliseconds — a **viability probability**, an explanation of *why* it scored that way, and a ranked list of **similar companies** to benchmark against.
 
----
-
-## ✨ Features
-
-- **Predictive Engine**: Powered by **CatBoost**, handling categorical features natively for fast inference on metrics like *funding velocity* and *burn-rate proxy*.
-- **Explainability**: **SHAP** values are computed on-the-fly to understand exactly *why* a startup received its score.
-- **Recommendations**: Lightning-fast nearest-neighbor lookup via **FAISS** over `Sentence-Transformer` embeddings (cached in **Redis**).
-- **Data Integrity**: **Pandera** schema validation paired with **Isolation Forest** anomaly detection.
-- **Version Control & Tracking**: Full dataset versioning with **DVC** and experiment logging with **MLflow**.
-- **Observability**: **Prometheus** metrics scraping and real-time visualization via **Grafana**.
+| Capability | Technology | Detail |
+|---|---|---|
+| 🧠 **Success Prediction** | CatBoost + Optuna | Categorical-native gradient boosting with automated HPO |
+| 📊 **Explainability** | SHAP TreeExplainer | Per-feature attribution values for every prediction |
+| 🔍 **Similar Startups** | FAISS + Sentence Transformers | Semantic nearest-neighbour search over the startup universe |
+| 🛡 **Data Quality** | Pandera + Isolation Forest | Schema validation and anomaly removal before training |
+| 📈 **Experiment Tracking** | MLflow + Model Registry | Full run history, artifact storage, and Production stage promotion |
+| 🌊 **Feature Serving** | Feast + Redis | Online feature store for sub-millisecond feature retrieval |
+| 📡 **Observability** | Prometheus + Grafana | Live request metrics, latency histograms, and dashboards |
+| 🔄 **Drift Detection** | Evidently AI | Covariate drift monitoring with automated HTML reports |
 
 ---
 
 ## 🏗 System Architecture
 
-The ecosystem supports the full lifecycle from data ingestion to high-performance serving:
-
 ```mermaid
 graph TD
-    subgraph "Data & Feature Layer"
-        A[Raw Data / DVC] --> B(Data Pipeline / Pandera)
-        B --> C{Isolation Forest Cleaning}
-        C --> D[Feature Engineering]
-        D --> E[(Feast Feature Store)]
+    subgraph "🗄 Data & Feature Layer"
+        A[Raw CSV / DVC] --> B(Pandera Validation)
+        B --> C{Isolation Forest}
+        C --> D[Feature Engineering<br/>funding_velocity · runway_months · network_centrality]
+        D --> E[(Feast Feature Store<br/>Redis Online Store)]
     end
 
-    subgraph "Modeling Layer"
+    subgraph "🧠 Modeling Layer"
         E --> F[Training Pipeline]
         F --> G[CatBoost Model]
-        F --> H[Optuna Tuning]
-        F --> I[(MLflow Tracking)]
+        F --> H[Optuna HPO]
+        F --> I[(MLflow Tracking<br/>Model Registry → Production)]
     end
 
-    subgraph "Serving Layer (FastAPI)"
-        G --> J[/api/v1/predict]
-        E --> J
-        J --> K[SHAP Explainer /api/v1/explain]
-        L[Sentence Transformers] --> M[(FAISS Index)]
-        M --> N[/api/v1/recommend]
-        N -.-> O[(Redis Cache)]
+    subgraph "⚡ Serving Layer — FastAPI"
+        I --> J["GET /health"]
+        I --> K["POST /api/v1/predict"]
+        K --> L["POST /api/v1/explain<br/>(SHAP)"]
+        K --> M["POST /api/v1/recommend<br/>(FAISS)"]
+        K --> N["GET /metrics<br/>(Prometheus)"]
     end
 
-    subgraph "Observability Layer"
-        J --> P[Prometheus]
-        P --> Q[Grafana Dashboard]
-        B -.-> R[Evidently AI Drift Detection]
+    subgraph "🖥 Frontend — Next.js"
+        O[Dashboard] --> K
+        O --> L
+        O --> M
+        P[Analytics Page] --> O
+        Q[Settings Page] --> O
     end
-    
-    subgraph "Frontend"
-        S[Next.js + Tailwind UI] --> J
-        S --> K
-        S --> N
+
+    subgraph "📡 Observability"
+        N --> R[Prometheus]
+        R --> S[Grafana Dashboard]
+        T[Evidently Monitor] --> U[Drift Report HTML]
     end
 ```
+
+---
+
+## ⚡ API Reference
+
+All endpoints are served at `http://localhost:8000`.
+
+### `GET /health`
+Returns the live status of every loaded component. Use this for Docker health checks and uptime monitoring.
+
+```json
+{
+  "status": "ok",
+  "model_loaded": true,
+  "faiss_loaded": true,
+  "shap_loaded": true
+}
+```
+
+### `POST /api/v1/predict`
+Returns a success probability between `0.0` and `1.0` for the given startup.
+
+**Request body:**
+```json
+{
+  "industry": "SaaS",
+  "country": "USA",
+  "months_active": 24,
+  "total_funding_usd": 5000000,
+  "burn_rate_proxy": 100000,
+  "co_investor_count": 3
+}
+```
+
+**Response:**
+```json
+{ "success_probability": 0.847 }
+```
+
+### `POST /api/v1/explain`
+Returns SHAP feature attribution values explaining the prediction.
+
+```json
+{
+  "shap_values": {
+    "total_funding_usd": 0.35,
+    "months_active": 0.15,
+    "co_investor_count": 0.10,
+    "country": 0.02,
+    "industry": -0.05,
+    "burn_rate_proxy": -0.22
+  }
+}
+```
+
+### `POST /api/v1/recommend`
+Returns top-5 similar startups ranked by semantic embedding similarity.
+
+```json
+{
+  "similar_startups": [
+    { "name": "Alpha SaaS Solutions", "similarity": 0.94 },
+    { "name": "NextGen SaaS Co",      "similarity": 0.88 }
+  ]
+}
+```
+
+### `GET /metrics`
+Standard Prometheus exposition format — scraped automatically by the Prometheus container.
 
 ---
 
 ## ⚡ Latency Budget
 
-For our production serving environment, response time is critical. Our target budget for the `/api/v1/predict` endpoint is **< 150ms**:
+Target end-to-end latency for `/api/v1/predict`: **< 150 ms**
 
-| Step | Component | Target Latency |
-| :--- | :--- | :--- |
-| 🗄️ **Feature Retrieval** | Feast (Redis Online Store) | `10 - 20 ms` |
-| 🧠 **Inference** | CatBoost Predict | `5 - 15 ms` |
-| 📊 **Explainability** | SHAP TreeExplainer | `30 - 50 ms` |
-| 🌐 **Network Overhead** | FastAPI + Network Transfer | `10 - 20 ms` |
-| **Total Latency** | | **`~55 - 105 ms`** |
+| Step | Component | Target |
+|---|---|---|
+| 🗄 Feature Retrieval | Feast / Redis | `10 – 20 ms` |
+| 🧠 Inference | CatBoost | `5 – 15 ms` |
+| 📊 Explainability | SHAP TreeExplainer | `30 – 50 ms` |
+| 🌐 Network Overhead | FastAPI + transfer | `10 – 20 ms` |
+| **Total** | | **`~55 – 105 ms`** |
 
-The `/api/v1/recommend` endpoint leverages **FAISS** and a **Redis** cache layer, keeping recommendation retrievals consistently under **50ms** for cached queries.
+FAISS recommendations are consistently **< 50 ms** for cached queries via Redis.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### 1. Infrastructure Setup
-The entire infrastructure stack is containerized. Spin up the backend, tracking servers, and databases with a single command:
+### Prerequisites
+- Python 3.10+, [Poetry](https://python-poetry.org/docs/#installation)
+- Node.js 18+ (for the frontend)
+- Docker & Docker Compose (for the full infrastructure stack)
+
+### 1 — Clone & Install
+
+```bash
+git clone https://github.com/AadityaBhuree/startup-success-engine.git
+cd startup-success-engine
+
+# Install Python dependencies
+make install
+
+# Install frontend dependencies
+cd app/frontend && npm install && cd ../..
+```
+
+### 2 — Configure Environment
+
+```bash
+cp .env.example .env
+# Edit .env with your secrets (Postgres password, MinIO key, etc.)
+```
+
+### 3 — Generate Data & Train
+
+```bash
+# Generate the mock startup dataset and track with DVC
+python src/utils/generate_mock_data.py
+dvc add data/raw/startups.csv
+
+# Train the CatBoost model (logs to MLflow, promotes to Registry)
+MLFLOW_TRACKING_URI=sqlite:///mlflow.db python src/train.py
+```
+
+### 4 — Start the Stack
+
+**Option A — Full Docker Stack** (recommended for production-like testing):
 ```bash
 make up
-```
-*(Spins up: FastAPI, MLflow, Feast, Postgres, MinIO, Redis, Prometheus, and Grafana).*
-
-### 2. Environment Setup
-Install the Python dependencies (via Poetry):
-```bash
-make install
+# Services: FastAPI · MLflow · Feast · Postgres · MinIO · Redis · Prometheus · Grafana
 ```
 
-### 3. Generate Mock Data & Track with DVC
+**Option B — Local Dev Mode**:
 ```bash
-python src/utils/generate_mock_data.py
-dvc init
-dvc add data/raw/startups.csv
+# Terminal 1 — Backend
+MLFLOW_TRACKING_URI=sqlite:///mlflow.db poetry run uvicorn app.backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 — Frontend
+cd app/frontend && npm run dev
 ```
 
-### 4. Code Quality
-Ensure the codebase remains pristine:
+Open **http://localhost:3000** for the dashboard · **http://localhost:8000/docs** for Swagger UI.
+
+### 5 — Materialize Feature Store
+
 ```bash
-make lint
-make test
+make materialize
+# Runs: feast apply && feast materialize-incremental <now>
 ```
 
 ---
 
-## 📁 Directory Structure
-```text
-Startup-Intelligence/
-├── .github/workflows/      # CI/CD pipelines
-├── app/
-│   ├── backend/            # FastAPI routers, schemas, dependencies
-│   └── frontend/           # Next.js/Tailwind dashboard
-├── docker/                 # Dockerfiles and docker-compose.yml
-├── feature_store/          # Feast repository
-├── src/
-│   ├── data_pipeline.py    # Pandera validation + cleaning
-│   ├── features.py         # Feast feature definitions
-│   ├── models.py           # CatBoost + Optuna
-│   └── engine.py           # Inference, FAISS, SHAP
-├── tests/                  # Pytest test suite
-├── Makefile                # Task runner
-└── pyproject.toml          # Poetry dependencies
+## 🧪 Testing
+
+```bash
+# Run all tests with coverage
+make test
+
+# Or directly with pytest
+PYTHONPATH=. MLFLOW_TRACKING_URI=fallback pytest tests/ -v --cov=app --cov=src
 ```
 
-<br/>
+**Current test suite:**
+
+| Module | Tests | Covers |
+|---|---|---|
+| `test_api.py` | 3 | `/predict`, `/explain`, `/recommend` endpoints |
+| `test_inference.py` | 8 | Predict/explain/recommend fallback behaviour |
+| `test_data_pipeline.py` | 8 | Schema validation, anomaly cleaning |
+| **Total** | **19** | **All passing ✅** |
+
+CI runs automatically on every push to `main` via GitHub Actions: format check (`black`), linting (`flake8`), tests with coverage report.
+
+---
+
+## 🔬 Engineered Features
+
+Beyond the raw inputs, the pipeline computes three derived signals that improve model accuracy:
+
+| Feature | Formula | Signal |
+|---|---|---|
+| `funding_velocity` | `total_funding_usd / months_active` | How aggressively capital is being raised |
+| `runway_months` | `total_funding_usd / burn_rate_proxy` | Estimated months before the startup runs out of cash |
+| `network_centrality` | `log1p(co_investor_count)` | Social proof from the investor network, log-scaled |
+
+---
+
+## 📊 Observability
+
+### Prometheus Metrics
+The FastAPI backend exposes `/metrics` with full Prometheus instrumentation:
+- `http_requests_total` — request count by method, path, and status
+- `http_request_duration_seconds` — latency histogram (P50, P95, P99)
+
+### Grafana
+Grafana is available at `http://localhost:3001` (default admin password in `.env`). Connect it to Prometheus at `http://prometheus:9090`.
+
+### Drift Detection
+Run the monthly drift report manually or via a cron job:
+```bash
+python src/monitor_drift.py
+# Outputs: data/drift_report.html and data/drift_summary.json
+```
+If >50% of columns show statistical drift, the script raises an alert to retrain the model.
+
+---
+
+## 📁 Project Structure
+
+```
+startup-success-engine/
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # CI: black + flake8 + pytest + coverage
+├── app/
+│   ├── backend/
+│   │   ├── main.py              # FastAPI app, middleware, routes
+│   │   └── inference.py         # InferenceEngine (CatBoost + SHAP + FAISS)
+│   └── frontend/
+│       └── src/
+│           ├── app/
+│           │   ├── page.tsx     # Dashboard (predict + explain + recommend)
+│           │   ├── analytics/   # Session prediction history & stats
+│           │   └── settings/    # Threshold sliders & display prefs
+│           └── components/
+│               ├── Sidebar.tsx          # Navigation with active highlighting
+│               ├── PredictionForm.tsx   # Input form with motion animations
+│               ├── FeatureExplanation.tsx
+│               └── SimilarStartups.tsx
+├── docker/
+│   ├── docker-compose.yml       # Full infrastructure stack (env-var driven)
+│   ├── backend.Dockerfile
+│   └── prometheus.yml           # Scrapes /metrics from FastAPI backend
+├── feature_store/
+│   ├── feature_store.yaml       # Feast project config (local + Redis)
+│   └── features.py              # Entity, FileSource, FeatureView definitions
+├── src/
+│   ├── config.py                # Centralised config (env-driven)
+│   ├── data_pipeline.py         # Pandera validation + Isolation Forest
+│   ├── features.py              # Engineered features (velocity, runway, centrality)
+│   ├── models.py                # CatBoost + Optuna + MLflow Registry
+│   ├── train.py                 # End-to-end training pipeline
+│   ├── engine.py                # Prediction + SHAP + FAISS search
+│   ├── monitor_drift.py         # Evidently drift report
+│   └── benchmark_embeddings.py  # FAISS index benchmarking
+├── tests/
+│   ├── test_api.py              # API endpoint integration tests
+│   ├── test_inference.py        # InferenceEngine unit tests
+│   └── test_data_pipeline.py    # Data pipeline unit tests
+├── data/
+│   └── raw/startups.csv         # DVC-tracked mock dataset
+├── .env.example                 # Environment variable template
+├── .flake8                      # Linting configuration
+├── Makefile                     # install · up · down · test · lint · materialize
+└── pyproject.toml               # Poetry dependencies
+```
+
+---
+
+## 🛠 Make Targets
+
+| Command | What it does |
+|---|---|
+| `make install` | Install all Python deps via Poetry |
+| `make up` | Start full Docker stack in detached mode |
+| `make down` | Stop and remove all Docker containers |
+| `make test` | Run pytest with coverage |
+| `make lint` | Run black + flake8 |
+| `make materialize` | Apply Feast registry and materialize features to Redis |
+
+---
+
+## 🗺 Roadmap
+
+- [ ] Real-time feature serving from Feast Redis online store in the inference path
+- [ ] Grafana dashboard templates auto-provisioned on `make up`
+- [ ] GitHub Actions cron job for monthly Evidently drift report
+- [ ] Investor network graph via NetworkX for richer `network_centrality`
+- [ ] Docker image publishing via GitHub Actions CD pipeline
+
+---
+
 <div align="center">
-  <p>Built with 🩵 for Data Engineering & Machine Learning Operations</p>
+
+Built with 🩵 by **Aditya Bhure** &nbsp;·&nbsp; Powered by CatBoost · SHAP · FAISS · FastAPI · Next.js · MLflow
+
 </div>
