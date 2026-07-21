@@ -3,6 +3,7 @@ from app.backend.main import app
 
 client = TestClient(app)
 
+
 def test_predict():
     payload = {
         "industry": "SaaS",
@@ -10,13 +11,14 @@ def test_predict():
         "months_active": 24,
         "total_funding_usd": 5000000,
         "burn_rate_proxy": 100000,
-        "co_investor_count": 3
+        "co_investor_count": 3,
     }
     response = client.post("/api/v1/predict", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert "success_probability" in data
     assert isinstance(data["success_probability"], float)
+
 
 def test_explain():
     payload = {
@@ -25,13 +27,14 @@ def test_explain():
         "months_active": 24,
         "total_funding_usd": 5000000,
         "burn_rate_proxy": 100000,
-        "co_investor_count": 3
+        "co_investor_count": 3,
     }
     response = client.post("/api/v1/explain", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert "shap_values" in data
     assert isinstance(data["shap_values"], dict)
+
 
 def test_recommend():
     payload = {
@@ -40,7 +43,7 @@ def test_recommend():
         "months_active": 12,
         "total_funding_usd": 1000000,
         "burn_rate_proxy": 50000,
-        "co_investor_count": 1
+        "co_investor_count": 1,
     }
     response = client.post("/api/v1/recommend", json=payload)
     assert response.status_code == 200

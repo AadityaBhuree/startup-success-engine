@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
@@ -9,6 +9,7 @@ app = FastAPI(title="Startup-Intelligence API")
 # Initialize the Inference Engine at startup
 inference_engine = InferenceEngine()
 
+
 class StartupFeatures(BaseModel):
     industry: str
     country: str
@@ -17,14 +18,18 @@ class StartupFeatures(BaseModel):
     burn_rate_proxy: float
     co_investor_count: int
 
+
 class PredictionResponse(BaseModel):
     success_probability: float
+
 
 class ExplanationResponse(BaseModel):
     shap_values: Dict[str, float]
 
+
 class RecommendationResponse(BaseModel):
     similar_startups: List[Dict[str, Any]]
+
 
 @app.post("/api/v1/predict", response_model=PredictionResponse)
 def predict(features: StartupFeatures):
@@ -34,6 +39,7 @@ def predict(features: StartupFeatures):
     prob = inference_engine.predict(features.dict())
     return {"success_probability": prob}
 
+
 @app.post("/api/v1/explain", response_model=ExplanationResponse)
 def explain(features: StartupFeatures):
     """
@@ -41,6 +47,7 @@ def explain(features: StartupFeatures):
     """
     shap_vals = inference_engine.explain(features.dict())
     return {"shap_values": shap_vals}
+
 
 @app.post("/api/v1/recommend", response_model=RecommendationResponse)
 def recommend(startup_data: Dict[str, Any]):
