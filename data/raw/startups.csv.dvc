@@ -1,0 +1,5 @@
+outs:
+- md5: 8e4c3bca8b1d669cdd3252cd0864e30a
+  size: 498900
+  hash: md5
+  path: startups.csv

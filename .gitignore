@@ -1,7 +1,9 @@
 venv/
 __pycache__/
 *.pyc
-data/
+data/*
+!data/**/*.dvc
+!data/**/.gitignore
 mlflow.db
 catboost_info/
 .env
